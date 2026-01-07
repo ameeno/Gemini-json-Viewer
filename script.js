@@ -148,13 +148,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const chunks = parsedData.chunkedPrompt?.chunks || [];
         for (let i = 0; i < chunks.length; i++) {
             if (chunks[i].role === 'user') {
-                // Ensure the 'role' property is explicitly set for currentPrompts items
-                currentPrompts.push({
-                    role: 'user', // <<< ADDED THIS
-                    text: chunks[i].text,
-                    tokenCount: chunks[i].tokenCount,
-                    originalIndexInChunks: i
-                });
+            // --- PATCH START ---
+            // Handle user prompts that are not text (e.g., file uploads from drive)
+            let promptText = chunks[i].text;
+            if (typeof promptText === 'undefined') {
+                if (chunks[i].driveDocument) {
+                    promptText = `[User provided Google Drive document]`;
+                } else {
+                    promptText = "[User input without text]";
+                }
+            }
+            // --- PATCH END ---
+
+            // Ensure the 'role' property is explicitly set for currentPrompts items
+            currentPrompts.push({
+                role: 'user',
+                text: promptText, // Use the safe, patched variable
+                tokenCount: chunks[i].tokenCount,
+                originalIndexInChunks: i
+            });
             }
         }
         populatePromptList();
